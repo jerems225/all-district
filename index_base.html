@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" rel="stylesheet">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script type="text/javascript" src="https://iclient.supermap.io/dist/leaflet/iclient-leaflet.js"></script>
+</head>
+<body>
+    <!-- The div displayed by map -->
+    <div id="map" style="position:absolute;left:0px;right:0px;width:100%;height:100%;"></div>
+
+    <script>
+        var host = window.isLocal ? window.server : "http://srv525080.hstgr.cloud:8090";
+        var yamoussoukro = new L.supermap.TiledMapLayer(host + '/iserver/services/map-PROJET_DISTRICT_YKR/rest/maps/PROJET_DISTRICT_YAKO', {noWrap: true});
+        var zanzan = new L.supermap.TiledMapLayer(host + '/iserver/services/map-WorkSpace_District_Zanzan/rest/maps/District_Zanzan%40District_Zanzan', {noWrap: true});
+
+        // Initialize map information with Yamoussoukro as the default layer
+        var map = L.map('map', {
+            crs: L.CRS.EPSG4326,
+            center: [6.83, -5.38], // Center on Yamoussoukro by default
+            maxZoom: 18,
+            zoom: 9,
+            zoomControl: true,
+            layers: [yamoussoukro]
+        });
+
+        // Define base layers
+        var baseMaps = {
+            "Yamoussoukro": yamoussoukro,
+            "Zanzan": zanzan
+        };
+
+        // Add layer control to the map
+        L.control.layers(baseMaps).addTo(map);
+
+        // Set the view to the appropriate coordinates when the map layer is changed
+        map.on('baselayerchange', function(event) {
+            if (event.name === 'Yamoussoukro') {
+                map.setView([6.83, -5.38], 9);
+            } else if (event.name === 'Zanzan') {
+                map.setView([8.52, -3.86], 6);
+            }
+        });
+    </script>
+</body>
+</html>

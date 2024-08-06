@@ -1,0 +1,185 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #map {
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 80px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            padding: 10px;
+            max-height: 400px;
+            width: 20%;
+            overflow-y: auto;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ajout d'une ombre pour améliorer la lisibilité */
+        }
+
+        .legend-title {
+            font-weight: bold;
+            text-align: center; /* Centrage du titre */
+            margin-bottom: 10px; /* Espacement après le titre */
+            position: sticky; /* Fixation du titre en haut de la boîte de légende */
+            top: 0; /* Positionnement du titre en haut */
+            background-color: rgba(255, 255, 255, 0.8); /* Fond blanc pour le titre */
+            padding: 5px; /* Espacement intérieur du titre */
+            z-index: 1; /* Empilement au-dessus des éléments de légende */
+        }
+
+        .legend-item {
+            margin-bottom: 8px; /* Espacement légèrement accru entre les éléments de la légende */
+        }
+
+        .legend-label {
+            font-weight: bold;
+            margin-left: 5px; /* Ajout d'une marge à gauche pour séparer l'étiquette de l'image */
+        }
+
+        .legend-image {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            vertical-align: middle; /* Alignement vertical au centre pour l'image et l'étiquette */
+        }
+    </style>
+</head>
+<body>
+    <!-- The div displayed by map -->
+    <div id="map"></div>
+
+    <!-- Legend container -->
+    <div id="legend" class="container-fluid">
+        <div class="legend-title">Légende</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://iclient.supermap.io/dist/leaflet/iclient-leaflet.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        var host = window.isLocal ? window.server : "http://srv525080.hstgr.cloud:8090";
+        var yamoussoukro = new L.supermap.TiledMapLayer(host + '/iserver/services/map-PROJET_DISTRICT_YKR/rest/maps/PROJET_DISTRICT_YAKO', { noWrap: true });
+        var zanzan = new L.supermap.TiledMapLayer(host + '/iserver/services/map-WorkSpace_District_Zanzan/rest/maps/District_Zanzan%40District_Zanzan', { noWrap: true });
+        var savane = new L.supermap.TiledMapLayer(host + '/iserver/services/map_district_savane_rxe5d3mo/rest/maps/District_Savane_1%40District_Savane', { noWrap: true });
+
+        var url_legende = 'http://srv525080.hstgr.cloud:8090/iserver/services/map-PROJET_DISTRICT_YKR/rest/maps/PROJET_DISTRICT_YAKO/legend.json?bbox=-5.85%2C6.55%2C-4.77%2C8.13';
+        // Initialize map information with Yamoussoukro as the default layer
+        var map = L.map('map', {
+            crs: L.CRS.EPSG4326,
+            center: [6.83, -5.38], // Center on Yamoussoukro by default
+            maxZoom: 18,
+            zoom: 9,
+            zoomControl: true,
+            layers: [yamoussoukro]
+        });
+
+        // Define base layers
+        var baseMaps = {
+            "Yamoussoukro": yamoussoukro,
+            "Zanzan": zanzan,
+            "Savane" :savane
+        };
+
+        // Add layer control to the map
+        L.control.layers(baseMaps).addTo(map);
+
+        // fonction pour la  légende
+        
+        function afficherLegende(url_legende){
+            fetch(url_legende)
+            .then(response => response.json())
+            .then(data => {
+            const legendData = data.layerLegends;
+            const legendContainer = document.getElementById('legend');
+
+            legendData.forEach(layer => {
+                const layerName = layer.layerName;
+                const legends = layer.legends;
+
+                legends.forEach(legend => {
+                    const legendLabel = legend.label;
+                    const legendImageData = legend.imageData;
+
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'legend-item';
+
+                    const legendImageElem = document.createElement('img');
+                    legendImageElem.className = 'legend-image';
+                    legendImageElem.src = 'data:image/png;base64,' + legendImageData;
+
+                    const legendLabelElem = document.createElement('span');
+                    legendLabelElem.className = 'legend-label';
+                    legendLabelElem.textContent = legendLabel;
+
+                    legendItem.appendChild(legendImageElem);
+                    legendItem.appendChild(legendLabelElem);
+
+                    legendContainer.appendChild(legendItem);
+                });
+            });
+        })
+        .catch(error => console.error('Erreur lors du chargement de la légende :', error));
+    }
+
+
+
+        // appel pour la première fois la légende
+
+        afficherLegende(url_legende);
+
+        // Set the view to the appropriate coordinates when the map layer is changed
+        map.on('baselayerchange', function (event) {
+            // Supprimer le contenu précédent de la légende
+            document.getElementById('legend').innerHTML = '';
+            document.getElementById('legend').innerHTML =  `<div class="legend-title">Légende</div>`;
+           
+            if (event.name === 'Yamoussoukro') {
+                map.setView([6.83, -5.38], 9);
+                url_legende = 'http://srv525080.hstgr.cloud:8090/iserver/services/map-PROJET_DISTRICT_YKR/rest/maps/PROJET_DISTRICT_YAKO/legend.json?bbox=-5.85%2C6.55%2C-4.77%2C8.13';
+                afficherLegende(url_legende);
+            } else if (event.name === 'Zanzan') {
+                map.setView([8.52, -3.86], 7);
+                url_legende = 'http://srv525080.hstgr.cloud:8090/iserver/services/map-WorkSpace_District_Zanzan/rest/maps/District_Zanzan@District_Zanzan/legend.json?bbox=-4.31%2C7.06%2C-2.49%2C9.96';
+                afficherLegende(url_legende);
+            } else if (event.name === 'Savane') {
+                map.setView([9.71, -5.67], 7);
+                url_legende = 'http://srv525080.hstgr.cloud:8090/iserver/services/map_district_savane_rxe5d3mo/rest/maps/District_Savane_1@District_Savane/legend.json?bbox=-6.97%2C8.54%2C-3.79%2C10.75';
+                afficherLegende(url_legende);
+            }
+
+
+        });
+
+
+
+
+
+
+
+       
+            
+            
+
+
+        
+
+        
+
+        
+       
+    </script>
+</body>
+</html>
